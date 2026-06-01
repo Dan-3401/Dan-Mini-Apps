@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>TopmostKeeper</AssemblyName>
+    <RootNamespace>TopmostKeeper</RootNamespace>
+    <Authors>Dan</Authors>
+    <Description>Trilingual Windows always-on-top utility made by Dan.</Description>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+</Project>
