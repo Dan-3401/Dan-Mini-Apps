@@ -20,9 +20,9 @@ DEFAULT_DOWNLOAD_DIR = Path.home() / "Downloads" / "BilibiliDownloader"
 BV_PATTERN = re.compile(r"(?i)\b(BV[0-9A-Za-z]{10})\b")
 AV_PATTERN = re.compile(r"(?i)\bav(\d+)\b")
 UI_TEXT = {
-    "zh": {"app": "B 站视频下载器", "credit": "Dan 制作", "language": "语言", "url": "视频地址", "result": "识别结果", "options": "下载选项", "video": "下载视频", "audio": "仅下载音频", "save": "保存位置", "choose": "选择文件夹", "open": "打开文件夹", "log": "运行记录", "detect": "识别视频", "download": "开始下载"},
-    "ja": {"app": "Bilibili 動画ダウンローダー", "credit": "Dan 制作", "language": "言語", "url": "動画 URL", "result": "解析結果", "options": "ダウンロード設定", "video": "動画をダウンロード", "audio": "音声のみ", "save": "保存先", "choose": "フォルダーを選択", "open": "フォルダーを開く", "log": "実行ログ", "detect": "動画を解析", "download": "ダウンロード開始"},
-    "en": {"app": "Bilibili Video Downloader", "credit": "Made by Dan", "language": "Language", "url": "Video URL", "result": "Video details", "options": "Download options", "video": "Download video", "audio": "Audio only", "save": "Save location", "choose": "Choose folder", "open": "Open folder", "log": "Activity log", "detect": "Analyze video", "download": "Start download"},
+    "zh": {"app": "B 站视频下载器", "credit": "Dan 制作", "language": "语言", "tagline": "用于下载你有权保存的视频。登录凭证只从本机浏览器读取，不会上传。", "cookies": "使用本机 Chrome 登录状态（会员画质或登录后可见视频）", "url": "视频地址", "result": "识别结果", "options": "下载选项", "video": "下载视频", "audio": "仅下载音频", "save": "保存位置", "choose": "选择文件夹", "open": "打开文件夹", "log": "运行记录", "detect": "识别视频", "download": "开始下载"},
+    "ja": {"app": "Bilibili 動画ダウンローダー", "credit": "Dan 制作", "language": "言語", "tagline": "保存する権利のある動画をダウンロードします。ログイン情報はローカルブラウザーからのみ読み取ります。", "cookies": "ローカル Chrome のログイン状態を使用", "url": "動画 URL", "result": "解析結果", "options": "ダウンロード設定", "video": "動画をダウンロード", "audio": "音声のみ", "save": "保存先", "choose": "フォルダーを選択", "open": "フォルダーを開く", "log": "実行ログ", "detect": "動画を解析", "download": "ダウンロード開始"},
+    "en": {"app": "Bilibili Video Downloader", "credit": "Made by Dan", "language": "Language", "tagline": "Download videos you have permission to save. Login data is only read from your local browser.", "cookies": "Use local Chrome login session", "url": "Video URL", "result": "Video details", "options": "Download options", "video": "Download video", "audio": "Audio only", "save": "Save location", "choose": "Choose folder", "open": "Open folder", "log": "Activity log", "detect": "Analyze video", "download": "Start download"},
 }
 
 
@@ -174,7 +174,7 @@ class BilibiliDownloaderApp(tk.Tk):
         language_combo.bind("<<ComboboxSelected>>", self._change_language)
         ttk.Label(
             container,
-            text="用于下载你有权保存的视频。登录凭证只从本机浏览器读取，不会上传。",
+            text=self._t("tagline"),
             foreground="#555555",
         ).grid(row=1, column=0, sticky="w", pady=(4, 18))
 
@@ -217,7 +217,7 @@ class BilibiliDownloaderApp(tk.Tk):
 
         self.cookie_checkbox = ttk.Checkbutton(
             options_frame,
-            text="使用本机 Chrome 登录状态（会员画质或登录后可见视频）",
+            text=self._t("cookies"),
             variable=self.browser_cookie_var,
         )
         self.cookie_checkbox.grid(row=2, column=0, columnspan=2, sticky="w", pady=(14, 0))
