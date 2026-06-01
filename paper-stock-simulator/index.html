@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>纸上牛市 · 模拟炒股</title>
+  <style>
+    :root {
+      --bg: #07101d;
+      --panel: rgba(15, 28, 47, .86);
+      --panel-2: rgba(20, 38, 63, .8);
+      --line: rgba(148, 163, 184, .16);
+      --text: #e7eef8;
+      --muted: #8fa2bc;
+      --green: #1fca84;
+      --red: #ff5d73;
+      --blue: #4aa8ff;
+      --gold: #f5b942;
+      --shadow: 0 16px 44px rgba(0, 0, 0, .2);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 1060px;
+      background:
+        radial-gradient(circle at 65% -10%, rgba(22, 93, 156, .22), transparent 30%),
+        linear-gradient(145deg, #07101d 0%, #091626 55%, #07101d 100%);
+      color: var(--text);
+      font: 14px/1.5 "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { max-width: 1500px; margin: 0 auto; padding: 18px 22px 28px; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px;
+      background: linear-gradient(135deg, #1685ff, #2bd5a0); color: #fff; font-size: 22px;
+      box-shadow: 0 8px 25px rgba(26, 145, 226, .28);
+    }
+    h1 { margin: 0; font-size: 19px; letter-spacing: .5px; }
+    .subtitle { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .head-actions { display: flex; align-items: center; gap: 9px; }
+    .language-select { width: auto; min-width: 94px; padding: 7px 8px; font-size: 12px; }
+    .badge, .ghost {
+      border: 1px solid var(--line); border-radius: 9px; padding: 7px 11px;
+      background: rgba(255, 255, 255, .03); color: var(--muted); font-size: 12px;
+    }
+    .ghost:hover { background: rgba(255, 255, 255, .08); color: var(--text); }
+    .live-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 13px; }
+    .stat, .panel {
+      border: 1px solid var(--line); border-radius: 13px; background: var(--panel);
+      box-shadow: var(--shadow); backdrop-filter: blur(14px);
+    }
+    .stat { padding: 14px 16px; }
+    .stat-label { color: var(--muted); font-size: 12px; }
+    .stat-value { margin-top: 5px; font-size: 23px; font-weight: 700; letter-spacing: .3px; }
+    .stat-note { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .up { color: var(--red) !important; }
+    .down { color: var(--green) !important; }
+    .main-grid { display: grid; grid-template-columns: 280px minmax(460px, 1fr) 300px; gap: 13px; }
+    .panel { overflow: hidden; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; padding: 13px 15px; border-bottom: 1px solid var(--line); font-weight: 700; }
+    .panel-title small { color: var(--muted); font-weight: 400; }
+    .search { padding: 10px 11px; border-bottom: 1px solid var(--line); }
+    input, select {
+      width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
+      outline: none; background: rgba(4, 12, 23, .62); color: var(--text);
+    }
+    input:focus, select:focus { border-color: rgba(74, 168, 255, .7); box-shadow: 0 0 0 3px rgba(74, 168, 255, .1); }
+    .stock-list { max-height: 570px; overflow-y: auto; }
+    .stock-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 12px 13px;
+      border-bottom: 1px solid rgba(148, 163, 184, .1); transition: .18s;
+    }
+    .stock-row:hover, .stock-row.active { background: rgba(74, 168, 255, .1); }
+    .stock-row.active { box-shadow: inset 3px 0 var(--blue); }
+    .stock-name { font-weight: 700; }
+    .stock-symbol, .tiny { color: var(--muted); font-size: 11px; }
+    .stock-price { text-align: right; font-weight: 700; }
+    .stock-change { text-align: right; font-size: 11px; }
+    .quote-head { display: flex; justify-content: space-between; padding: 16px 17px 7px; }
+    .quote-company { font-size: 18px; font-weight: 700; }
+    .quote-price { margin-top: 4px; font-size: 30px; font-weight: 800; }
+    .quote-meta { display: grid; grid-template-columns: repeat(4, auto); gap: 6px 18px; align-content: center; color: var(--muted); font-size: 12px; }
+    .quote-meta b { display: block; margin-top: 2px; color: var(--text); font-weight: 500; text-align: right; }
+    .chart-wrap { height: 280px; margin: 5px 15px 8px; border-radius: 9px; background: rgba(4, 12, 23, .42); overflow: hidden; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .table-wrap { max-height: 266px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: right; font-size: 12px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid rgba(148, 163, 184, .1); white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 1; background: #102039; color: var(--muted); font-weight: 500; }
+    th:first-child, td:first-child { text-align: left; }
+    .order-box { padding: 14px; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 14px; padding: 3px; border-radius: 8px; background: rgba(4, 12, 23, .55); }
+    .tab { border: 0; border-radius: 6px; padding: 8px; background: transparent; color: var(--muted); }
+    .tab.active.buy { background: rgba(255, 93, 115, .16); color: var(--red); }
+    .tab.active.sell { background: rgba(31, 202, 132, .16); color: var(--green); }
+    .field { margin-bottom: 11px; }
+    .field label { display: flex; justify-content: space-between; margin-bottom: 5px; color: var(--muted); font-size: 12px; }
+    .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 7px 0 13px; }
+    .quick button { border: 1px solid var(--line); border-radius: 6px; padding: 5px 2px; background: transparent; color: var(--muted); font-size: 11px; }
+    .quick button:hover { border-color: var(--blue); color: var(--text); }
+    .order-summary { margin: 9px 0; padding: 10px; border-radius: 7px; background: rgba(4, 12, 23, .46); color: var(--muted); font-size: 12px; }
+    .order-summary div { display: flex; justify-content: space-between; margin: 3px 0; }
+    .submit { width: 100%; border: 0; border-radius: 8px; padding: 11px; color: #fff; font-weight: 700; }
+    .submit.buy { background: linear-gradient(135deg, #ff4f68, #e53b5a); }
+    .submit.sell { background: linear-gradient(135deg, #20bd7f, #129b68); }
+    .below { display: grid; grid-template-columns: 1.1fr .9fr; gap: 13px; margin-top: 13px; }
+    .empty { padding: 26px; color: var(--muted); text-align: center; }
+    .toast {
+      position: fixed; right: 24px; bottom: 24px; z-index: 9; max-width: 340px;
+      padding: 12px 15px; border: 1px solid var(--line); border-radius: 9px;
+      background: #14243b; color: var(--text); box-shadow: var(--shadow);
+      opacity: 0; transform: translateY(10px); pointer-events: none; transition: .22s;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .disclaimer { margin-top: 12px; color: #70849f; font-size: 11px; text-align: center; }
+    @media (max-width: 1160px) {
+      .app { padding: 12px; }
+      .main-grid { grid-template-columns: 245px minmax(420px, 1fr) 280px; gap: 9px; }
+      .stats, .below { gap: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">↗</div>
+        <div><h1>纸上牛市</h1><div class="subtitle">本地模拟交易终端 · 数据自动保存</div></div>
+      </div>
+      <div class="head-actions">
+        <span class="badge" id="creatorCredit">Dan 制作</span>
+        <select class="language-select" id="languageSelect" aria-label="Language">
+          <option value="zh">中文</option>
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+        <span class="badge"><span class="live-dot"></span>模拟行情运行中</span>
+        <button class="ghost" id="resetBtn">重置账户</button>
+      </div>
+    </header>
+
+    <section class="stats">
+      <div class="stat"><div class="stat-label">总资产</div><div class="stat-value" id="totalAsset">--</div><div class="stat-note">现金 + 持仓市值</div></div>
+      <div class="stat"><div class="stat-label">可用资金</div><div class="stat-value" id="cash">--</div><div class="stat-note">初始资金 ¥100,000.00</div></div>
+      <div class="stat"><div class="stat-label">持仓市值</div><div class="stat-value" id="marketValue">--</div><div class="stat-note" id="positionCount">当前 0 只股票</div></div>
+      <div class="stat"><div class="stat-label">累计收益</div><div class="stat-value" id="profit">--</div><div class="stat-note" id="profitRate">收益率 --</div></div>
+    </section>
+
+    <section class="main-grid">
+      <aside class="panel">
+        <div class="panel-title">模拟行情 <small>每 3 秒更新</small></div>
+        <div class="search"><input id="searchInput" placeholder="搜索名称 / 代码"></div>
+        <div class="stock-list" id="stockList"></div>
+      </aside>
+
+      <main class="panel">
+        <div class="quote-head">
+          <div>
+            <div class="quote-company" id="quoteName">--</div>
+            <div class="tiny" id="quoteSymbol">--</div>
+            <div class="quote-price" id="quotePrice">--</div>
+            <div id="quoteChange">--</div>
+          </div>
+          <div class="quote-meta">
+            <span>今开<b id="quoteOpen">--</b></span><span>最高<b id="quoteHigh">--</b></span>
+            <span>最低<b id="quoteLow">--</b></span><span>昨收<b id="quotePrev">--</b></span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart"></canvas></div>
+        <div class="panel-title">我的持仓 <small id="holdingHint">点击行情切换股票</small></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>股票</th><th>持仓</th><th>成本价</th><th>现价</th><th>市值</th><th>浮动盈亏</th></tr></thead>
+          <tbody id="positionsBody"></tbody>
+        </table></div>
+      </main>
+
+      <aside class="panel">
+        <div class="panel-title">快捷交易 <small>T+0 模拟</small></div>
+        <div class="order-box">
+          <div class="tabs"><button class="tab active buy" data-side="buy">买入</button><button class="tab sell" data-side="sell">卖出</button></div>
+          <div class="field"><label>股票<span id="orderStock">--</span></label><select id="orderSymbol"></select></div>
+          <div class="field"><label>模拟市价<span id="orderPrice">--</span></label><input id="priceInput" readonly></div>
+          <div class="field"><label>数量（股）<span>支持任意整数</span></label><input id="qtyInput" type="number" min="1" step="1" placeholder="输入数量"></div>
+          <div class="quick"><button data-pct=".25">25%</button><button data-pct=".5">50%</button><button data-pct=".75">75%</button><button data-pct="1">全部</button></div>
+          <div class="order-summary"><div><span>预计金额</span><b id="orderAmount">¥0.00</b></div><div><span id="capacityLabel">最大可买</span><b id="capacity">0 股</b></div></div>
+          <button class="submit buy" id="submitOrder">确认买入</button>
+        </div>
+      </aside>
+    </section>
+
+    <section class="below">
+      <div class="panel">
+        <div class="panel-title">交易记录 <small>最新记录在上方</small></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>时间</th><th>类型</th><th>股票</th><th>价格</th><th>数量</th><th>成交额</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">玩法说明 <small>轻量单机版</small></div>
+        <div style="padding:14px 17px;color:var(--muted);font-size:12px;line-height:1.85">
+          <div>· 初始虚拟资金为 <b style="color:var(--text)">¥100,000</b>，买卖即时成交。</div>
+          <div>· 价格每 3 秒随机波动，仅为模拟数据，与真实市场无关。</div>
+          <div>· 资产和交易记录保存在浏览器本地，关闭页面后不会丢失。</div>
+          <div>· 随时点击右上角“重置账户”重新开始。</div>
+        </div>
+      </div>
+    </section>
+    <div class="disclaimer">仅供娱乐和练习，不构成任何投资建议，不接入真实账户或真实行情。</div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const initialStocks = [
+      ["600519", "贵州茅台", 1548.20], ["000001", "平安银行", 11.26],
+      ["300750", "宁德时代", 238.40], ["600036", "招商银行", 43.18],
+      ["601318", "中国平安", 51.62], ["000858", "五粮液", 131.55],
+      ["002594", "比亚迪", 318.72], ["600900", "长江电力", 27.84],
+      ["601899", "紫金矿业", 17.92], ["688981", "中芯国际", 83.36],
+      ["300059", "东方财富", 23.18], ["600276", "恒瑞医药", 51.05]
+    ];
+    const STORE_KEY = "paper-bull-market-v1";
+    const money = n => "¥" + Number(n).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const num = n => Number(n).toLocaleString("zh-CN", { maximumFractionDigits: 2 });
+    const signed = n => (n >= 0 ? "+" : "") + Number(n).toFixed(2);
+    const signedPct = n => (n >= 0 ? "+" : "") + Number(n).toFixed(2) + "%";
+    const nowText = () => new Date().toLocaleString("zh-CN", { hour12: false }).replaceAll("/", "-");
+
+    function seedStocks() {
+      return initialStocks.map(([symbol, name, price], index) => {
+        const prev = +(price * (1 + (Math.random() - .5) * .035)).toFixed(2);
+        const open = +(prev * (1 + (Math.random() - .5) * .018)).toFixed(2);
+        let p = open;
+        const history = Array.from({ length: 42 }, () => {
+          p = +(p * (1 + (Math.random() - .5) * .006)).toFixed(2);
+          return p;
+        });
+        price = history.at(-1);
+        return { symbol, name, price, prev, open, high: Math.max(open, ...history), low: Math.min(open, ...history), history, index };
+      });
+    }
+    function defaultState() {
+      return { cash: 100000, stocks: seedStocks(), positions: {}, history: [], selected: "600519", side: "buy" };
+    }
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+        if (saved?.stocks?.length && typeof saved.cash === "number") return saved;
+      } catch {}
+      return defaultState();
+    }
+    let state = loadState();
+    const el = id => document.getElementById(id);
+    const selectedStock = () => state.stocks.find(s => s.symbol === state.selected) || state.stocks[0];
+    const stockBySymbol = symbol => state.stocks.find(s => s.symbol === symbol);
+    function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    function classFor(value) { return value >= 0 ? "up" : "down"; }
+    function calc() {
+      let marketValue = 0;
+      let cost = 0;
+      Object.entries(state.positions).forEach(([symbol, pos]) => {
+        const stock = stockBySymbol(symbol);
+        marketValue += stock.price * pos.qty;
+        cost += pos.avg * pos.qty;
+      });
+      return { marketValue, cost, total: state.cash + marketValue, profit: state.cash + marketValue - 100000 };
+    }
+    function renderStats() {
+      const info = calc();
+      el("totalAsset").textContent = money(info.total);
+      el("cash").textContent = money(state.cash);
+      el("marketValue").textContent = money(info.marketValue);
+      const count = Object.keys(state.positions).length;
+      el("positionCount").textContent = `当前 ${count} 只股票`;
+      el("profit").textContent = money(info.profit);
+      el("profit").className = `stat-value ${classFor(info.profit)}`;
+      el("profitRate").textContent = `收益率 ${signedPct(info.profit / 1000)}`;
+    }
+    function renderStockList() {
+      const query = el("searchInput").value.trim().toLowerCase();
+      el("stockList").innerHTML = state.stocks
+        .filter(s => s.name.includes(query) || s.symbol.includes(query))
+        .map(s => {
+          const change = (s.price - s.prev) / s.prev * 100;
+          return `<div class="stock-row ${s.symbol === state.selected ? "active" : ""}" data-symbol="${s.symbol}">
+            <div class="stock-name">${s.name}</div><div class="stock-price">${s.price.toFixed(2)}</div>
+            <div class="stock-symbol">${s.symbol}</div><div class="stock-change ${classFor(change)}">${signedPct(change)}</div>
+          </div>`;
+        }).join("") || `<div class="empty">未找到股票</div>`;
+      document.querySelectorAll(".stock-row[data-symbol]").forEach(row => row.onclick = () => selectStock(row.dataset.symbol));
+    }
+    function renderQuote() {
+      const s = selectedStock();
+      const change = s.price - s.prev, pct = change / s.prev * 100;
+      el("quoteName").textContent = s.name;
+      el("quoteSymbol").textContent = `${s.symbol} · 模拟 A 股`;
+      el("quotePrice").textContent = s.price.toFixed(2);
+      el("quotePrice").className = `quote-price ${classFor(change)}`;
+      el("quoteChange").textContent = `${signed(change)}  ${signedPct(pct)}`;
+      el("quoteChange").className = classFor(change);
+      el("quoteOpen").textContent = s.open.toFixed(2);
+      el("quoteHigh").textContent = s.high.toFixed(2);
+      el("quoteLow").textContent = s.low.toFixed(2);
+      el("quotePrev").textContent = s.prev.toFixed(2);
+      drawChart(s);
+    }
+    function drawChart(s) {
+      const canvas = el("chart"), rect = canvas.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+      canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d"); ctx.scale(dpr, dpr);
+      const w = rect.width, h = rect.height, pad = 24, data = s.history, color = s.price >= s.prev ? "#ff5d73" : "#1fca84";
+      const min = Math.min(...data), max = Math.max(...data), spread = max - min || 1;
+      const y = v => h - pad - (v - min) / spread * (h - pad * 2);
+      const x = i => pad + i / (data.length - 1) * (w - pad * 2);
+      ctx.strokeStyle = "rgba(148,163,184,.12)"; ctx.lineWidth = 1;
+      for (let i = 1; i < 5; i++) { const gy = h / 5 * i; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke(); }
+      const grad = ctx.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, color + "55"); grad.addColorStop(1, color + "00");
+      ctx.beginPath(); data.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+      ctx.lineTo(x(data.length - 1), h - pad); ctx.lineTo(x(0), h - pad); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+      ctx.beginPath(); data.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "#8fa2bc"; ctx.font = "11px Arial"; ctx.textAlign = "right";
+      ctx.fillText(max.toFixed(2), w - 7, 14); ctx.fillText(min.toFixed(2), w - 7, h - 7);
+    }
+    function renderPositions() {
+      const rows = Object.entries(state.positions).map(([symbol, pos]) => {
+        const s = stockBySymbol(symbol), value = s.price * pos.qty, pnl = (s.price - pos.avg) * pos.qty;
+        return `<tr><td><b>${s.name}</b><br><span class="tiny">${symbol}</span></td><td>${num(pos.qty)}</td><td>${pos.avg.toFixed(2)}</td><td>${s.price.toFixed(2)}</td><td>${money(value)}</td><td class="${classFor(pnl)}">${money(pnl)}</td></tr>`;
+      });
+      el("positionsBody").innerHTML = rows.join("") || `<tr><td colspan="6" class="empty">暂无持仓，先选一只股票试试吧</td></tr>`;
+    }
+    function renderHistory() {
+      el("historyBody").innerHTML = state.history.map(item =>
+        `<tr><td>${item.time}</td><td class="${item.side === "买入" ? "up" : "down"}">${item.side}</td><td>${item.name}<br><span class="tiny">${item.symbol}</span></td><td>${item.price.toFixed(2)}</td><td>${num(item.qty)}</td><td>${money(item.amount)}</td></tr>`
+      ).join("") || `<tr><td colspan="6" class="empty">暂无交易记录</td></tr>`;
+    }
+    function fillStockSelect() {
+      el("orderSymbol").innerHTML = state.stocks.map(s => `<option value="${s.symbol}">${s.name} · ${s.symbol}</option>`).join("");
+      el("orderSymbol").value = state.selected;
+    }
+    function renderOrder() {
+      const s = selectedStock(), pos = state.positions[s.symbol], buy = state.side === "buy", qty = Math.max(0, parseInt(el("qtyInput").value) || 0);
+      const max = buy ? Math.floor(state.cash / s.price) : (pos?.qty || 0);
+      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.side === state.side));
+      const submit = el("submitOrder"); submit.className = `submit ${state.side}`; submit.textContent = buy ? "确认买入" : "确认卖出";
+      el("orderStock").textContent = `${s.name} ${s.symbol}`;
+      el("orderPrice").textContent = `${s.price.toFixed(2)} 元`;
+      el("priceInput").value = s.price.toFixed(2);
+      el("orderAmount").textContent = money(s.price * qty);
+      el("capacityLabel").textContent = buy ? "最大可买" : "可卖数量";
+      el("capacity").textContent = `${num(max)} 股`;
+      return max;
+    }
+    function renderAll() { renderStats(); renderStockList(); renderQuote(); renderPositions(); renderHistory(); renderOrder(); save(); }
+    function selectStock(symbol) { state.selected = symbol; el("orderSymbol").value = symbol; el("qtyInput").value = ""; renderAll(); }
+    function toast(text) { el("toast").textContent = text; el("toast").classList.add("show"); clearTimeout(toast.timer); toast.timer = setTimeout(() => el("toast").classList.remove("show"), 2300); }
+    function submitOrder() {
+      const s = selectedStock(), qty = parseInt(el("qtyInput").value), max = renderOrder(), buy = state.side === "buy";
+      if (!qty || qty < 1 || qty % 1) return toast("请输入有效的整数数量");
+      if (qty > max) return toast(buy ? "可用资金不足" : "持仓数量不足");
+      const amount = +(s.price * qty).toFixed(2), pos = state.positions[s.symbol];
+      if (buy) {
+        state.cash = +(state.cash - amount).toFixed(2);
+        state.positions[s.symbol] = { qty: (pos?.qty || 0) + qty, avg: pos ? (pos.avg * pos.qty + amount) / (pos.qty + qty) : s.price };
+      } else {
+        state.cash = +(state.cash + amount).toFixed(2);
+        if (qty === pos.qty) delete state.positions[s.symbol]; else pos.qty -= qty;
+      }
+      state.history.unshift({ time: nowText(), side: buy ? "买入" : "卖出", symbol: s.symbol, name: s.name, price: s.price, qty, amount });
+      state.history = state.history.slice(0, 80);
+      el("qtyInput").value = "";
+      renderAll(); toast(`${buy ? "买入" : "卖出"}成功：${s.name} ${qty} 股`);
+    }
+    function tick() {
+      state.stocks.forEach(s => {
+        const drift = (Math.random() - .49) * .009;
+        s.price = +(Math.max(.01, s.price * (1 + drift))).toFixed(2);
+        s.high = Math.max(s.high, s.price); s.low = Math.min(s.low, s.price);
+        s.history.push(s.price); if (s.history.length > 60) s.history.shift();
+      });
+      renderAll();
+    }
+    el("searchInput").oninput = renderStockList;
+    el("orderSymbol").onchange = e => selectStock(e.target.value);
+    el("qtyInput").oninput = renderOrder;
+    el("submitOrder").onclick = submitOrder;
+    document.querySelectorAll(".tab").forEach(t => t.onclick = () => { state.side = t.dataset.side; el("qtyInput").value = ""; renderOrder(); });
+    document.querySelectorAll(".quick button").forEach(btn => btn.onclick = () => { const max = renderOrder(); el("qtyInput").value = Math.floor(max * +btn.dataset.pct); renderOrder(); });
+    el("resetBtn").onclick = () => {
+      if (confirm("确定重置账户吗？虚拟资金、持仓和交易记录都会清空。")) {
+        state = defaultState(); fillStockSelect(); renderAll(); toast("账户已重置");
+      }
+    };
+    fillStockSelect(); renderAll();
+    addEventListener("resize", () => drawChart(selectedStock()));
+    setInterval(tick, 3000);
+  </script>
+  <script src="./i18n.js"></script>
+</body>
+</html>
