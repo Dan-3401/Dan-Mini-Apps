@@ -1,0 +1,5 @@
+<PARSED TEXT FOR SHEET: 1 / 1 TABS
+TAB NAME: sample_shopify_risk_update.csv>index,URL handle,Title,SKU,Price,Inventory quantity,Description,Vendor,Option1 name,Option1 value
+0,linen-dress,リネン服,LD-RED,6200,12,,Kuma Shop,Color,Crimson
+1,linen-dress,,LD-BLUE,5900,4,,Kuma Shop,Color,Blue
+2,mug,マグ,MG-01,980,9,美濃焼,陶器工房,Title,Default Title
